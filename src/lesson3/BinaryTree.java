@@ -10,7 +10,7 @@ import java.util.*;
 public class BinaryTree<T extends Comparable<T>> extends AbstractSet<T> implements CheckableSortedSet<T> {
 
     private static class Node<T> {
-        final T value;
+        T value;
 
         Node<T> left = null;
 
@@ -74,9 +74,46 @@ public class BinaryTree<T extends Comparable<T>> extends AbstractSet<T> implemen
      */
     @Override
     public boolean remove(Object o) {
-        // TODO
-        throw new NotImplementedError();
+        if (contains(o)) {
+            size--;
+            root = deleteRec(root, (T) o);
+            return true;
+        }
+        return false;
     }
+
+
+    private Node<T> deleteRec(Node<T> current, T value)  {
+        if (current == null) {
+            return null;
+        }
+
+        if (value.compareTo(current.value) < 0) {
+            current.left = deleteRec(current.left, value);
+        } else if (value.compareTo(current.value) > 0) {
+            current.right = deleteRec(current.right, value);
+        } else {
+            if (current.left == null) {
+                return current.right;
+
+            } else if (current.right == null) {
+                return current.left;
+            }
+            current.value = min(current.right);
+            current.right = deleteRec(current.right, current.value);
+        }
+        return current;
+    }
+
+    private T min(Node<T> root) {
+        T min = root.value;
+        while (root.left != null) {
+            min = root.left.value;
+            root = root.left;
+        }
+        return min;
+    }
+
 
     @Override
     public boolean contains(Object o) {
@@ -107,9 +144,15 @@ public class BinaryTree<T extends Comparable<T>> extends AbstractSet<T> implemen
     }
 
     public class BinaryTreeIterator implements Iterator<T> {
+        private LinkedList<Node<T>> list;
 
         private BinaryTreeIterator() {
-            // Добавьте сюда инициализацию, если она необходима
+            list = new LinkedList<>();
+            Node<T> current = root;
+            while (current != null) {
+                list.addFirst(current);
+                current = current.left;
+            }
         }
 
         /**
@@ -118,8 +161,7 @@ public class BinaryTree<T extends Comparable<T>> extends AbstractSet<T> implemen
          */
         @Override
         public boolean hasNext() {
-            // TODO
-            throw new NotImplementedError();
+            return !list.isEmpty();
         }
 
         /**
@@ -128,8 +170,19 @@ public class BinaryTree<T extends Comparable<T>> extends AbstractSet<T> implemen
          */
         @Override
         public T next() {
-            // TODO
-            throw new NotImplementedError();
+            if (list.isEmpty()) {
+                throw new IllegalStateException();
+            }
+            Node<T> toReturn = list.pop();
+            Node<T> current = toReturn;
+            if (current.right != null) {
+                current = current.right;
+                while (current != null) {
+                    list.addFirst(current);
+                    current = current.left;
+                }
+            }
+            return toReturn.value;
         }
 
         /**

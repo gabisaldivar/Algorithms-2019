@@ -3,7 +3,12 @@ package lesson2;
 import kotlin.NotImplementedError;
 import kotlin.Pair;
 
+import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 public class JavaAlgorithms {
@@ -99,10 +104,34 @@ public class JavaAlgorithms {
      * Если имеется несколько самых длинных общих подстрок одной длины,
      * вернуть ту из них, которая встречается раньше в строке first.
      */
-    static public String longestCommonSubstring(String firs, String second) {
-        throw new NotImplementedError();
-    }
+    static public String longestCommonSubstring(String first, String second) {
+        // Если длина строки first - m, а second - n, то имеем такую сложность:
+        // По памяти: O(m*n)
+        // По времени: O(m*n)
+        int[][] matrix = new int[first.length() + 1][second.length() + 1];
+        int longestRow = 0;
+        int longestColumn = 0;
+        int longestLength = 0;
 
+        for (int i = 1; i <= first.length(); i++) {
+            for (int j = 1; j <= second.length(); j++) {
+                if (first.charAt(i - 1) == second.charAt(j - 1)) {
+                    matrix[i][j] = matrix[i - 1][j - 1] + 1;
+                    if (longestLength < matrix[i][j]) {
+                        longestLength = matrix[i][j];
+                        longestRow = i;
+                        longestColumn = j;
+                    }
+                }
+            }
+        }
+        StringBuilder result = new StringBuilder();
+        for (; matrix[longestRow][longestColumn] != 0; longestRow--, longestColumn--) {
+            result.append(first.charAt(longestRow - 1));
+        }
+
+        return result.reverse().toString();
+    }
     /**
      * Число простых чисел в интервале
      * Простая
@@ -144,6 +173,79 @@ public class JavaAlgorithms {
      * Остальные символы ни в файле, ни в словах не допускаются.
      */
     static public Set<String> baldaSearcher(String inputName, Set<String> words) {
-        throw new NotImplementedError();
-    }
+
+        // Сложность:
+        // По памяти: O(n)
+        // По времени O(n^2)
+            char[][] matrix = readCharMatrixFromFile(inputName);
+            return words.stream()
+                    .filter(word -> wordExistsInMatrix(matrix, word))
+                    .collect(Collectors.toSet());
+        }
+
+        // Метод для проверки наличия слова в матрице
+        private static boolean wordExistsInMatrix(char[][] matrix, String word) {
+            boolean isFound = false;
+            for (int i = 0; i < matrix.length && !isFound; ++i) {
+                for (int j = 0; j < matrix[i].length && !isFound; ++j) {
+                    isFound = checkWordRecursive(matrix, i, j, word, 0, new ArrayList<>());
+                }
+            }
+            return isFound;
+        }
+        // Рекурсивный метод дял поиска слов в мтарице
+        private static boolean checkWordRecursive(char[][] matrix, int i, int j, String word, int pos, List<int[]> usedElements) {
+            if (pos == word.length()) {
+                return true;
+            }
+            boolean isFound = false;
+            if (matrix[i][j] == word.charAt(pos)) {
+                usedElements.add(new int[] {i, j});
+                if (isFree(i - 1, j, usedElements)) {
+                    isFound = checkWordRecursive(matrix, i - 1, j, word, pos + 1, usedElements);
+                }
+                // Проверка ячейки слева
+                if (!isFound && isFree(i, j - 1, usedElements)) {
+                    isFound = checkWordRecursive(matrix, i, j - 1, word, pos + 1, usedElements);
+                }
+                // Проверка ячейки снизу
+                if (!isFound && isFree(i + 1, j, usedElements)) {
+                    isFound = checkWordRecursive(matrix, i + 1, j, word, pos + 1, usedElements);
+                }
+                // Проверка ячейки справа
+                if (!isFound && isFree(i, j + 1, usedElements)) {
+                    isFound = checkWordRecursive(matrix, i, j + 1, word, pos + 1, usedElements);
+                }
+            }
+            return isFound;
+        }
+
+        private static boolean isFree(int i, int j, List<int[]> usedElements) {
+            return usedElements.stream()
+                    .noneMatch(used -> used[0] == i && used[1] == j);
+        }
+
+        // Метод для считывания данных с файла
+        private static char[][] readCharMatrixFromFile(String fileName) {
+            List<String> rows = new ArrayList<>();
+            try {
+                BufferedReader br = new BufferedReader(new InputStreamReader(
+                        new FileInputStream(fileName), "UTF-8"));
+                String line;
+                while ((line = br.readLine()) != null) {
+                    rows.add(line);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            char[][] matrix = new char[rows.size() + 2][rows.get(0).split(" ").length + 2];
+            for (int i = 0; i < rows.size(); ++i) {
+                String[] charArr = rows.get(i).split(" ");
+                for (int j = 0 ; j < matrix[i].length - 2; ++j) {
+                    matrix[i + 1][j + 1] = charArr[j].charAt(0);
+                }
+            }
+            return matrix;
+        }
 }
