@@ -2,8 +2,7 @@ package lesson5;
 
 import kotlin.NotImplementedError;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @SuppressWarnings("unused")
 public class JavaGraphTasks {
@@ -34,7 +33,37 @@ public class JavaGraphTasks {
      * связного графа ровно по одному разу
      */
     public static List<Graph.Edge> findEulerLoop(Graph graph) {
-        throw new NotImplementedError();
+        ArrayList<Graph.Edge> ans = new ArrayList<>(Collections.emptyList());
+        Set<Graph.Edge> edges = graph.getEdges(); //R=O(E)
+        if (edges.size() >= 3) {
+            Stack<Graph.Vertex> vStack = new Stack<>();
+            Stack<Graph.Edge> eStack = new Stack<>();
+
+            vStack.push(edges.iterator().next().getBegin());
+            HashMap<Graph.Edge, Boolean> visited = new HashMap<>();
+            for (Graph.Edge e : edges) {
+                visited.put(e, false);
+            }
+
+            Graph.Vertex v;
+            int visitedAmount = 0;
+            while (!vStack.isEmpty()) //T=(V*V*E)
+
+            if (visitedAmount != edges.size() || !connected(ans.get(0), ans.get(ans.size() - 1))) {
+                ans.clear();
+            }
+        }
+        return ans;
+    }
+
+    private static boolean connected(Graph.Edge first, Graph.Edge second) {
+        Graph.Vertex fB = first.getBegin();
+        Graph.Vertex fE = first.getEnd();
+        Graph.Vertex sB = second.getBegin();
+        Graph.Vertex sE = second.getEnd();
+
+        return fB.equals(sB) || fB.equals(sE) || fE.equals(sE) || fE.equals(sB);
+
     }
 
     /**
@@ -96,8 +125,91 @@ public class JavaGraphTasks {
      * Эта задача может быть зачтена за пятый и шестой урок одновременно
      */
     public static Set<Graph.Vertex> largestIndependentVertexSet(Graph graph) {
-        throw new NotImplementedError();
+        iSets = new HashMap<>();
+        Set<Graph.Vertex> vertices = graph.getVertices();
+        if (vertices.isEmpty()) {
+            return Collections.emptySet();
+        }
+        HashMap<Graph.Vertex, Boolean> visited = new HashMap<>();
+        for (Graph.Vertex v : vertices) {
+            visited.put(v, false);
+        }
+        passed = 0;
+        Set<Graph.Vertex> ans = new HashSet<>();
+        while (passed != vertices.size()) {
+            Graph.Vertex start = null;
+            for (Graph.Vertex v : vertices) {
+                if (!visited.get(v)) {
+                    start = v;
+                    break;
+                }
+            }
+            if (dfs(graph, start, visited)) {
+                ans.addAll(independentSet(graph, start, null));
+            } else {
+                throw new IllegalArgumentException();
+            }
+        }
+        return ans;
     }
+
+    private static int passed;
+
+    private static boolean dfs(Graph graph, Graph.Vertex current, HashMap<Graph.Vertex, Boolean> visited) {
+        visited.put(current, true);
+        passed++;
+        Set<Graph.Vertex> neighbours = graph.getNeighbors(current);
+        int visitedAmount = 0;
+        for (Graph.Vertex n : neighbours) {
+            if (visited.get(n) && visitedAmount++ > 1) {
+                return false;
+            }
+        }
+        for (Graph.Vertex n : neighbours) {
+            if (!visited.get(n)) {
+                return dfs(graph, n, visited);
+            }
+        }
+        return true;
+    }
+
+    private static HashMap<Graph.Vertex, Set<Graph.Vertex>> iSets;
+
+    private static Set<Graph.Vertex> independentSet(Graph graph, Graph.Vertex vertex, Graph.Vertex parent) {
+        if (iSets.get(vertex) != null) {
+            return iSets.get(vertex);
+        }
+
+        Set<Graph.Vertex> childrenSum = new HashSet<>();
+        Set<Graph.Vertex> gChildrenSum = new HashSet<>();
+        Set<Graph.Vertex> children = graph.getNeighbors(vertex);
+        if (parent != null) {
+            children.remove(parent);
+        }
+        HashMap<Graph.Vertex, Set<Graph.Vertex>> grandChildren = new HashMap<>();
+        for (Graph.Vertex child : children) {
+            Set<Graph.Vertex> c = graph.getNeighbors(child);
+            c.remove(vertex);
+            grandChildren.put(child, c);
+            childrenSum.addAll(independentSet(graph, child, vertex));
+        }
+        for (Map.Entry<Graph.Vertex, Set<Graph.Vertex>> grandChild : grandChildren.entrySet()) {
+            for (Graph.Vertex gcv : grandChild.getValue()) {
+                gChildrenSum.addAll(independentSet(graph, gcv, grandChild.getKey()));
+            }
+        }
+        Set<Graph.Vertex> res;
+        if (childrenSum.size() > gChildrenSum.size() + 1) {
+            res = childrenSum;
+            iSets.put(vertex, childrenSum);
+        } else {
+            gChildrenSum.add(vertex);
+            res = gChildrenSum;
+            iSets.put(vertex, gChildrenSum);
+        }
+        return res;
+    }
+
 
     /**
      * Наидлиннейший простой путь.
